@@ -2,7 +2,10 @@ const CACHE_NAME = 'trade-memo-v1';
 const ASSETS = [
   './index.html',
   './tailwindcss.js',
-  './lucide.js'
+  './lucide.js',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', (e) => {
