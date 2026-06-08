@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Trade Memo">
@@ -1140,16 +1141,16 @@
             };
 
             // 描画関数を呼び出す
-            drawPieChart(aggregate(incomeRecords), 'report-svg-profit', 'report-legend-profit');
-            drawPieChart(aggregate(expenseRecords), 'report-svg-loss', 'report-legend-loss');
+            drawPieChart(aggregate(incomeRecords), 'report-svg-profit');
+            renderLegend(aggregate(incomeRecords), 'report-legend-profit');
+            drawPieChart(aggregate(expenseRecords), 'report-svg-loss');
+            renderLegend(aggregate(expenseRecords), 'report-legend-loss');
         }
 
-        function drawPieChart(chartData, svgId, legendId) {
+        function drawPieChart(chartData, svgId) {
             const svg = document.getElementById(svgId);
-            const legend = document.getElementById(legendId);
 
             svg.innerHTML = '';
-            legend.innerHTML = '';
 
             const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
@@ -1170,23 +1171,51 @@
                 const endAngle = startAngle + sliceAngle;
                 const percentageValue = (slice.value / total) * 100;
 
-                const x1 = centerX + radius * Math.cos(startAngle);
-                const y1 = centerY + radius * Math.sin(startAngle);
-                const x2 = centerX + radius * Math.cos(endAngle);
-                const y2 = centerY + radius * Math.sin(endAngle);
+                if (Math.abs(sliceAngle - Math.PI * 2) < 0.0001) {
 
-                const largeArcFlag = sliceAngle > Math.PI ? 1 : 0;
+                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circle.setAttribute("cx", centerX);
+                    circle.setAttribute("cy", centerY);
+                    circle.setAttribute("r", radius);
+                    circle.setAttribute("fill", slice.color);
+                    svg.appendChild(circle);
 
-                const pathData = `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+                } else if (sliceAngle !== 0) {
 
-                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    const x1 = centerX + radius * Math.cos(startAngle);
+                    const y1 = centerY + radius * Math.sin(startAngle);
+                    const x2 = centerX + radius * Math.cos(endAngle);
+                    const y2 = centerY + radius * Math.sin(endAngle);
 
-                path.setAttribute("d", pathData);
-                path.setAttribute("fill", slice.color);
+                    const largeArcFlag = sliceAngle > Math.PI ? 1 : 0;
 
-                svg.appendChild(path);
+                    const pathData = `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+                    path.setAttribute("d", pathData);
+                    path.setAttribute("fill", slice.color);
+
+                    svg.appendChild(path);
+                }
 
                 startAngle = endAngle;
+            });
+        }
+
+        function renderLegend(chartData, legendId) {
+            const legend = document.getElementById(legendId);
+
+            legend.innerHTML = '';
+
+            const total = chartData.reduce((sum, item) => sum + item.value, 0);
+
+            if (total === 0) {
+                return;
+            }
+
+            chartData.forEach(slice => {
+                const percentageValue = (slice.value / total) * 100;
 
                 const row = document.createElement('div');
                 row.className = "flex items-center justify-between text-xs border-b border-gray-100 pb-1.5 last:border-0";
